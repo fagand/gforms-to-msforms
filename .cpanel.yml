@@ -17,7 +17,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/fagancom/repositories/gforms-to-msforms
-    - export VENV_PIP=/home/fagancom/virtualenv/repositories/gforms-to-msforms/3.10/bin/pip
+    - export VENV_PIP=/home/fagancom/virtualenv/repositories/gforms-to-msforms/3.13/bin/pip
     - /bin/mkdir -p $DEPLOYPATH/tmp
     - if [ -x "$VENV_PIP" ]; then $VENV_PIP install -q -r $DEPLOYPATH/requirements.txt; fi
     - /bin/touch $DEPLOYPATH/tmp/restart.txt
