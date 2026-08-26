@@ -1,0 +1,23 @@
+# cPanel Git Version Control auto-deploy script.
+#
+# This runs when you click "Deploy HEAD Commit" (or "Update from Remote" then
+# "Deploy") on this repository's page under cPanel -> Git Version Control.
+#
+# It assumes the repository's "Repository Path" IS your Python app's application
+# root (i.e. the app runs directly out of the git working copy — no separate
+# public_html copy step needed for a Python/Passenger app). If you set it up that
+# way, you don't need to edit DEPLOYPATH below; cPanel already runs these tasks
+# with the repository's working copy as the current directory.
+#
+# Fill in YOUR_CPANEL_USERNAME and YOUR_APP_ROOT_NAME below to match what you chose
+# in "Setup Python App" (see README.md's cPanel deployment section), then commit
+# this file. The venv path's Python version segment (e.g. "3.11") also needs to
+# match what's shown on your app's Setup Python App page.
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/YOUR_CPANEL_USERNAME/YOUR_APP_ROOT_NAME
+    - export VENV_PIP=/home/YOUR_CPANEL_USERNAME/virtualenv/YOUR_APP_ROOT_NAME/3.11/bin/pip
+    - /bin/mkdir -p $DEPLOYPATH/tmp
+    - if [ -x "$VENV_PIP" ]; then $VENV_PIP install -q -r $DEPLOYPATH/requirements.txt; fi
+    - /bin/touch $DEPLOYPATH/tmp/restart.txt

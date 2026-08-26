@@ -1,0 +1,33 @@
+# systemd unit for the converter, run behind Nginx (see deploy/nginx.conf).
+#
+# Install:
+#   sudo cp deploy/gforms2msforms.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now gforms2msforms
+#
+# Adjust User/Group and the paths below to match where you deployed the app
+# (see the "Linux deployment" section of README.md for the full walkthrough).
+
+[Unit]
+Description=Google Forms to Microsoft Forms Converter
+After=network.target
+
+[Service]
+Type=simple
+User=gforms2msforms
+Group=gforms2msforms
+WorkingDirectory=/opt/gforms2msforms
+Environment="PATH=/opt/gforms2msforms/.venv/bin"
+ExecStart=/opt/gforms2msforms/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8811 --workers 2
+Restart=on-failure
+RestartSec=5
+
+# Hardening — the app only needs to read its own code and write to the system
+# temp directory for job files (auto-cleaned; see app/jobs.py).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

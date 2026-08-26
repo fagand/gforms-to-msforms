@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Google Forms → Microsoft Forms Converter</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <h1>Google Forms <span class="arrow">&rarr;</span> Microsoft Forms Converter</h1>
+      <p>
+        Upload migrated Google Forms ZIP files and generate Microsoft Forms
+        Quick Import Word documents — ready to import in a couple of clicks.
+      </p>
+    </header>
+
+    <main class="card">
+      <section id="upload-section">
+        <div id="dropzone" class="dropzone" tabindex="0" role="button"
+             aria-label="Drag ZIP files here, or click to browse">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+            <path d="M12 3v10m0 0-4-4m4 4 4-4M5 21h14a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-3.5a.5.5 0 0 0-.4.2L14 17H10l-1.1-1.8a.5.5 0 0 0-.4-.2H5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1Z"
+                  fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="dropzone-title">Drag ZIP files here</p>
+          <p class="dropzone-subtitle">or click to browse — up to 20 files</p>
+          <input id="file-input" type="file" accept=".zip" multiple hidden />
+        </div>
+
+        <div id="file-list-wrap" hidden>
+          <h2 class="section-title">Selected Files</h2>
+          <ul id="file-list" class="file-list"></ul>
+          <div class="actions">
+            <button id="convert-btn" class="btn btn-primary" disabled>Convert</button>
+            <button id="clear-btn" class="btn btn-secondary">Clear</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="results-section" hidden>
+        <h2 class="section-title">Conversion Results</h2>
+        <ul id="results-list" class="file-list"></ul>
+        <div id="results-summary" class="results-summary"></div>
+        <div class="actions">
+          <button id="download-btn" class="btn btn-primary" hidden>Download All Documents</button>
+          <button id="start-over-btn" class="btn btn-secondary">Start Over</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Correct answers and points are attempted automatically, but Microsoft Forms
+        does not guarantee this on import — each document includes a full Answer Key
+        page as a reliable fallback. See the generated document for details.
+      </p>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
