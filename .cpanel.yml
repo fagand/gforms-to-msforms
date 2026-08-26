@@ -23,7 +23,7 @@
 ---
 deployment:
   tasks:
-    - export REPOPATH=/home/fagancom/repositories/gforms-to-msforms
+    - export REPOPATH=/home/fagancom/repositories/gforms-to-msforms2
     - export APPPATH=/home/fagancom/gforms-to-msforms-app
     - export VENV_PIP=/home/fagancom/virtualenv/gforms-to-msforms-app/3.13/bin/pip
     - /bin/mkdir -p $APPPATH
