@@ -185,49 +185,79 @@ depends on your specific host's Apache/Passenger setup, which varies host to hos
 conversions succeed correctly either way, so test it after deploying and treat it as
 a cosmetic detail, not a blocker.
 
-1. **cPanel → Software → Setup Python App → Create Application**
-   - **Python version**: pick the highest 3.11+ available.
-   - **Application root**: e.g. `gforms2msforms` (this becomes a folder in your home directory).
+### Recommended: deploy via cPanel Git Version Control
+
+If you push this repo to GitHub and use cPanel's **Git™ Version Control** feature to
+pull it, there's one important gotcha: cPanel's git storage folder
+(`~/repositories/<name>`) has locked-down permissions that Passenger/Apache **cannot
+read through**. Pointing a Python App's application root directly at that folder
+fails with an error like:
+
+```
+Passengerfile.json ... Permission denied (errno=13)
+Apache doesn't have read permissions to that file.
+```
+
+The fix — and cPanel's own intended pattern, which is why `.cpanel.yml` deployment
+tasks exist at all — is to keep git storage and the live app in **two separate
+folders**, and have `.cpanel.yml` copy files from one to the other on every deploy:
+
+```
+~/repositories/gforms-to-msforms   <- git clones/pulls here (do NOT point Passenger at this)
+~/gforms-to-msforms-app            <- Passenger's application root (plain folder, normal permissions)
+```
+
+1. **cPanel → Git™ Version Control → Create** (if you haven't already): clone this
+   repo's GitHub URL into `~/repositories/gforms-to-msforms`.
+
+2. **cPanel → Software → Setup Python App → Create Application**:
+   - **Python version**: highest available.
+   - **Application root**: `gforms-to-msforms-app` — a **new** folder name that
+     doesn't exist yet (Setup Python App creates it for you with normal
+     permissions). Do **not** point this at `repositories/...`.
    - **Application URL**: the domain or subdomain you want it on, e.g. `forms.yourschool.uk`.
    - **Application startup file**: `passenger_wsgi.py`
    - **Application Entry point**: `application`
-   - Click **Create**.
+   - Click **Create**. Note the exact venv path it shows you afterwards.
 
-2. **Upload the code** into the application root cPanel just created. Easiest via
-   Git if your host's cPanel has "Git Version Control" (point it at this repo and
-   the same application root); otherwise upload a ZIP of the project via File
-   Manager and extract it there, or `scp`/SFTP it up if your host gives you SSH.
+3. **Edit `.cpanel.yml`** in the repo (already included) so `REPOPATH`, `APPPATH`,
+   and `VENV_PIP` match your actual cPanel username, the app folder name you chose,
+   and the exact Python version segment from step 2. Commit and push that change.
 
-3. **Install dependencies.** The "Setup Python App" page gives you a command to
-   enter its virtualenv, something like:
-
-   ```bash
-   source /home/<cpanel-username>/virtualenv/gforms2msforms/3.11/bin/activate
-   cd /home/<cpanel-username>/gforms2msforms
-   pip install -r requirements.txt
-   ```
-
-   Run that (via cPanel's Terminal app if you have one enabled, or over SSH if your
-   host provides it).
-
-4. **Restart the app** — back on the Setup Python App page, click **Restart**.
+4. **cPanel → Git™ Version Control → (this repo) → Manage → Pull or Deploy**: click
+   **Update from Remote**, then **Deploy HEAD Commit**. This runs `.cpanel.yml`,
+   which copies the code into `gforms-to-msforms-app`, installs dependencies, and
+   restarts the app.
 
 5. Visit the domain/subdomain you configured and confirm the upload/convert/download
    flow works with a real migrated ZIP.
 
-### Updating
+From then on, updating is: commit + push (e.g. via GitHub Desktop) → **Update from
+Remote** → **Deploy HEAD Commit** in cPanel. No manual file copying or SSH needed.
 
-Pull or re-upload the changed files into the application root, then re-run
-`pip install -r requirements.txt` in the app's virtualenv if `requirements.txt`
-changed, and click **Restart** on the Setup Python App page.
+### Alternative: no Git Version Control (plain upload)
+
+If your host doesn't offer Git Version Control, skip straight to step 2 above using
+`gforms-to-msforms-app` (or any name you like) as the Application root, then upload
+the project files directly into that folder via File Manager or SFTP instead of
+`REPOPATH`/rsync, and run `pip install -r requirements.txt` manually in its venv
+each time you update.
 
 ### If it doesn't work at all
 
-- **500 error / blank page**: check the "Errors" / log file link on the Setup
-  Python App page — it shows the Python traceback.
-- **No "Setup Python App" option**: your hosting plan doesn't support persistent
-  Python apps; ask your host, or consider a small VPS instead (see the Linux
-  deployment guide above) — a VPS costing a few pounds a month gives you full
+- **"Passengerfile.json ... Permission denied"**: you've pointed the Python App's
+  Application root at the git storage folder (`~/repositories/...`) — see above;
+  move it to a separate plain folder instead.
+- **"The system cannot deploy" / "No .cpanel.yml" / "uncommitted changes"**: make
+  sure `.cpanel.yml` has actually been pushed to GitHub and pulled via "Update from
+  Remote" before clicking Deploy; if it still complains about uncommitted changes,
+  check `git status` in `~/repositories/gforms-to-msforms` via cPanel Terminal —
+  something may have modified a tracked file directly on the server.
+- **500 error / blank page after a successful deploy**: check the "Errors" / log
+  file link on the Setup Python App page — it shows the Python traceback.
+- **No "Setup Python App" option at all**: your hosting plan doesn't support
+  persistent Python apps; ask your host, or consider a small VPS instead (see the
+  Linux deployment guide above) — a VPS costing a few pounds a month gives you full
   control and is the more common route for self-hosted school tools like this one.
 - **Uploads fail or time out**: some cPanel/Apache configs cap request body size or
   execution time lower than this app's own limits — ask your host to raise
