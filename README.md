@@ -188,24 +188,32 @@ a cosmetic detail, not a blocker.
 ### Recommended: deploy via cPanel Git Version Control
 
 If you push this repo to GitHub and use cPanel's **Git™ Version Control** feature to
-pull it, there's one important gotcha: cPanel's git storage folder
-(`~/repositories/<name>`) has locked-down permissions that Passenger/Apache **cannot
-read through**. Pointing a Python App's application root directly at that folder
-fails with an error like:
+pull it, keep git storage and the live app in **two separate folders**, and have
+`.cpanel.yml` copy files from one to the other on every deploy — this is cPanel's own
+intended pattern, and the reason `.cpanel.yml` deployment tasks exist at all:
+
+```
+~/repositories/gforms-to-msforms   <- git clones/pulls here (do NOT point Passenger at this)
+~/gforms-to-msforms-app            <- Passenger's application root (plain folder)
+```
+
+**A permissions gotcha you may hit either way**, on hosts that run Apache without
+per-user isolation (no CloudLinux CageFS — Apache runs as a shared user, not as your
+account): you'll see an error like
 
 ```
 Passengerfile.json ... Permission denied (errno=13)
 Apache doesn't have read permissions to that file.
 ```
 
-The fix — and cPanel's own intended pattern, which is why `.cpanel.yml` deployment
-tasks exist at all — is to keep git storage and the live app in **two separate
-folders**, and have `.cpanel.yml` copy files from one to the other on every deploy:
-
-```
-~/repositories/gforms-to-msforms   <- git clones/pulls here (do NOT point Passenger at this)
-~/gforms-to-msforms-app            <- Passenger's application root (plain folder, normal permissions)
-```
+This happens because Setup Python App auto-generates `Passengerfile.json` in your
+application root, and on some hosts it's created with owner-only permissions that a
+shared Apache user can't read — regardless of which folder the app lives in. The
+included `.cpanel.yml` fixes this automatically on every deploy (it force-sets
+directories to `755` and files to `644` after copying, and explicitly preserves and
+fixes `Passengerfile.json` rather than deleting it). If you hit this error before your
+first successful deploy, fix it once by hand: in File Manager, select the app's
+folder, **Change Permissions → Recurse into subdirectories → 755**.
 
 1. **cPanel → Git™ Version Control → Create** (if you haven't already): clone this
    repo's GitHub URL into `~/repositories/gforms-to-msforms`.
@@ -245,9 +253,9 @@ each time you update.
 
 ### If it doesn't work at all
 
-- **"Passengerfile.json ... Permission denied"**: you've pointed the Python App's
-  Application root at the git storage folder (`~/repositories/...`) — see above;
-  move it to a separate plain folder instead.
+- **"Passengerfile.json ... Permission denied"**: see the permissions gotcha above —
+  fix it once by hand (File Manager → app folder → Change Permissions → recurse →
+  `755`), then redeploy; `.cpanel.yml` prevents it recurring on future deploys.
 - **"The system cannot deploy" / "No .cpanel.yml" / "uncommitted changes"**: make
   sure `.cpanel.yml` has actually been pushed to GitHub and pulled via "Update from
   Remote" before clicking Deploy; if it still complains about uncommitted changes,

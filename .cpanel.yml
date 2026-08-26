@@ -3,18 +3,25 @@
 # This runs when you click "Deploy HEAD Commit" (or "Update from Remote" then
 # "Deploy") on this repository's page under cPanel -> Git Version Control.
 #
-# IMPORTANT: this deliberately does NOT run the Python app directly out of the git
-# storage folder (~/repositories/<name>). cPanel locks that folder's permissions
-# down in a way that makes Passenger unable to read files in it directly (you'll
-# see "Passengerfile.json ... Permission denied" if you try). cPanel's own intended
-# pattern — and the reason .cpanel.yml deployment tasks exist at all — is to copy
-# files OUT of git storage into a normal, separate application folder on every
-# deploy. That's what this script does.
+# This copies files from git storage (REPOPATH) into the Python app's own folder
+# (APPPATH) rather than running the app directly out of git storage — cPanel's own
+# intended pattern, and the reason .cpanel.yml deployment tasks exist at all.
+#
+# It also force-fixes file permissions after every copy. On some hosts (this one
+# included), Apache/Passenger runs as a different user than your account, without
+# per-user isolation (no CloudLinux CageFS) — so every file needs to be
+# world-readable, not just readable by you. If Setup Python App's own
+# auto-generated Passengerfile.json ends up with restrictive (owner-only)
+# permissions, you'll see "Passengerfile.json ... Permission denied" when loading
+# the app; the chmod steps below prevent that from recurring on every deploy.
+# Passengerfile.json itself isn't part of this git repo, so it's explicitly
+# excluded from the rsync --delete, and its permissions are fixed rather than
+# leaving it to be silently deleted.
 #
 # One-time setup before this works:
 #   1. In "Setup Python App", create the app with Application root = APPPATH below
 #      (a NEW folder name that does not already exist — Setup Python App creates
-#      it for you, with normal permissions). Do NOT point it at ~/repositories/...
+#      it for you). Do NOT point it at ~/repositories/...
 #   2. Double-check the venv Python version segment below (3.13) against the exact
 #      command Setup Python App shows you after creating the app — adjust if it
 #      differs.
@@ -27,7 +34,10 @@ deployment:
     - export APPPATH=/home/fagancom/gforms-to-msforms-app
     - export VENV_PIP=/home/fagancom/virtualenv/gforms-to-msforms-app/3.13/bin/pip
     - /bin/mkdir -p $APPPATH
-    - /usr/bin/rsync -a --delete --exclude='.git' --exclude='.cpanel.yml' $REPOPATH/ $APPPATH/
+    - /usr/bin/rsync -a --delete --exclude='.git' --exclude='.cpanel.yml' --exclude='Passengerfile.json' $REPOPATH/ $APPPATH/
     - /bin/mkdir -p $APPPATH/tmp
+    - /usr/bin/find $APPPATH -type d -exec /bin/chmod 755 {} \;
+    - /usr/bin/find $APPPATH -type f -exec /bin/chmod 644 {} \;
+    - if [ -f "$APPPATH/Passengerfile.json" ]; then /bin/chmod 644 "$APPPATH/Passengerfile.json"; fi
     - if [ -x "$VENV_PIP" ]; then $VENV_PIP install -q -r $APPPATH/requirements.txt; fi
     - /bin/touch $APPPATH/tmp/restart.txt
