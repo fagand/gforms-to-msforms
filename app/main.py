@@ -161,7 +161,11 @@ async def stream_job(job_id: str):
                 for docx_file in sorted((job.dir / "outputs").iterdir()):
                     zf.write(docx_file, arcname=docx_file.name)
             job.results_zip = zip_path
-            download_url = f"/api/jobs/{job_id}/download"
+            # Relative (no leading slash) so it resolves correctly via the page's
+            # <base> tag regardless of whether this app is hosted at a domain root
+            # or a sub-path (e.g. behind a reverse proxy or cPanel Passenger app
+            # mounted under /something/) — see app/static/index.html.
+            download_url = f"api/jobs/{job_id}/download"
 
         yield _sse(
             "done",

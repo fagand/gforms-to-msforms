@@ -4,7 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Google Forms → Microsoft Forms Converter</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    // Makes every relative URL in this page (stylesheet, script, and the app's own
+    // fetch/EventSource calls) resolve correctly no matter what path this app is
+    // hosted under (domain root, a subdomain, or a subdirectory like /work/forms/
+    // behind a reverse proxy that doesn't announce its mount prefix). Must run
+    // before any relative resource tag below.
+    document.write('<base href="' + location.pathname.replace(/\/?$/, '/') + '">');
+  </script>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="page">
@@ -59,6 +67,6 @@
     </footer>
   </div>
 
-  <script src="/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

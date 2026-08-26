@@ -169,7 +169,7 @@
 
     let response;
     try {
-      response = await fetch("/api/jobs", { method: "POST", body: formData });
+      response = await fetch("api/jobs", { method: "POST", body: formData });
     } catch (err) {
       resultsSummaryEl.textContent = "Upload failed — check your connection and try again.";
       return;
@@ -194,7 +194,7 @@
 
   function listenToJob(jobId) {
     if (currentEventSource) currentEventSource.close();
-    const es = new EventSource(`/api/jobs/${jobId}/stream`);
+    const es = new EventSource(`api/jobs/${jobId}/stream`);
     currentEventSource = es;
 
     es.addEventListener("start", (e) => {
@@ -225,7 +225,7 @@
         downloadBtn.onclick = () => {
           window.location.href = data.download_url;
           setTimeout(() => {
-            fetch(`/api/jobs/${jobId}`, { method: "DELETE" }).catch(() => {});
+            fetch(`api/jobs/${jobId}`, { method: "DELETE" }).catch(() => {});
           }, 3000);
         };
       }
@@ -244,7 +244,7 @@
 
   startOverBtn.addEventListener("click", () => {
     if (currentEventSource) currentEventSource.close();
-    if (currentJobId) fetch(`/api/jobs/${currentJobId}`, { method: "DELETE" }).catch(() => {});
+    if (currentJobId) fetch(`api/jobs/${currentJobId}`, { method: "DELETE" }).catch(() => {});
     currentJobId = null;
     selectedFiles = [];
     renderFileList();
