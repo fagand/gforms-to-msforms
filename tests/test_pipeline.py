@@ -22,7 +22,32 @@ def test_convert_real_sample_end_to_end():
     text = "\n".join(p.text for p in doc.paragraphs)
     assert "1. What number system do computers use to store data?" in text
     assert "ANSWER: C" in text
-    assert "Answer Key" in text
+    # The Answer Key must NOT be in the Quick-Import file itself — a real Microsoft
+    # Forms import confirmed it keeps parsing past the real questions, absorbing this
+    # section into the last question and spawning a bogus extra question from it.
+    assert "Answer Key" not in text
+
+    assert result.answer_key_bytes is not None
+    ak_doc = Document(io.BytesIO(result.answer_key_bytes))
+    ak_text = "\n".join(p.text for p in ak_doc.paragraphs)
+    assert "Answer Key" in ak_text
+    assert "Q1: What number system do computers use to store data?" in ak_text
+    assert "do not import it into Microsoft Forms" in ak_text
+
+
+def test_quiz_docx_has_no_trailing_content_after_last_question():
+    """Regression test for the real Microsoft Forms import bug: the quiz docx must
+    end right after the last question/choice/ANSWER/POINT line — nothing else, since
+    Quick Import keeps parsing anything left in the file."""
+    fixture = Path(__file__).parent / "fixtures" / "short_answer_quiz.zip"
+    result = convert_zip("short_answer_quiz.zip", fixture.read_bytes())
+    assert result.success is True
+
+    doc = Document(io.BytesIO(result.docx_bytes))
+    paragraphs = [p.text for p in doc.paragraphs]
+    last_non_empty = next(t for t in reversed(paragraphs) if t.strip())
+    assert last_non_empty == "16. 1001 1001"
+    assert "Answer Key" not in "\n".join(paragraphs)
 
 
 def test_not_a_zip_fails_gracefully():

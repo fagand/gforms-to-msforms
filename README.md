@@ -27,9 +27,16 @@ Import does **not guarantee** that pre-defined correct answers, point values, or
 Quick Import creating your questions and choices, then a teacher manually ticking the
 correct answer per question in Microsoft Forms. This app tries an undocumented (but
 independently reported-working) `ANSWER:`/`POINT:` marker convention to automate that
-step, **and** always appends a plain-English **Answer Key** page to every generated
-document, so the manual step (if needed) takes seconds per question instead of
-requiring you to go back to the original Google Form.
+step for single-choice questions, **and** always generates a separate, plain-English
+**Answer Key** document alongside the importable one, so the manual step (if needed)
+takes seconds per question instead of requiring you to go back to the original Google
+Form. The Answer Key is a second file, not a section of the importable one — an
+earlier version appended it to the same document, and a real Microsoft Forms import
+confirmed Quick Import doesn't stop at the end of your real questions: it kept
+parsing into that section and produced a garbage extra question from the leftovers.
+Open-text (typed-answer) questions have no automatic-answer mechanism at all — Quick
+Import doesn't support importing correct answers for that question type, so those
+always need the manual step, regardless of what's in the source document.
 
 ## Features
 
@@ -37,8 +44,9 @@ requiring you to go back to the original Google Form.
 - Live, per-file progress with no page reload (Server-Sent Events)
 - Partial-failure handling — one bad ZIP never blocks the rest of the batch
 - A single "Download All Documents" ZIP of every successful conversion
-- Every generated `.docx` includes an Answer Key + Conversion Notes page so nothing
-  is silently lost (dropped images, unsupported question types, etc. are all listed)
+- Every conversion produces two files: the Quick-Import-ready `.docx`, and a separate
+  Answer Key + Conversion Notes `.docx` so nothing is silently lost (dropped images,
+  unsupported question types, etc. are all listed there, not in the importable file)
 - No data retained: uploads and generated files live in a per-batch temp folder that
   is deleted as soon as you download, and swept automatically after 2 hours regardless
 

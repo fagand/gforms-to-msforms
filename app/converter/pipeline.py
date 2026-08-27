@@ -9,9 +9,7 @@ import io
 import zipfile
 from dataclasses import dataclass
 
-from docx import Document
-
-from .docx_builder import build_docx
+from .docx_builder import build_answer_key_docx, build_quiz_docx
 from .errors import ConversionError
 from .parser import find_form_html, parse_quiz
 
@@ -26,6 +24,8 @@ class ConversionResult:
     success: bool
     docx_filename: str | None = None
     docx_bytes: bytes | None = None
+    answer_key_filename: str | None = None
+    answer_key_bytes: bytes | None = None
     error: str | None = None
     warnings: list[str] | None = None
 
@@ -72,12 +72,20 @@ def convert_zip(original_filename: str, data: bytes) -> ConversionResult:
         files = _safe_extract_all(data)
         html_name, html_text = find_form_html(files)
         quiz = parse_quiz(html_text, html_name)
-        document: Document = build_docx(quiz)
 
+        quiz_doc, conversion_notes = build_quiz_docx(quiz)
         buf = io.BytesIO()
-        document.save(buf)
-
+        quiz_doc.save(buf)
         docx_filename = _safe_docx_filename(quiz.title, original_filename)
+
+        answer_key_filename = None
+        answer_key_bytes = None
+        answer_key_doc = build_answer_key_docx(quiz, conversion_notes)
+        if answer_key_doc is not None:
+            ak_buf = io.BytesIO()
+            answer_key_doc.save(ak_buf)
+            answer_key_filename = _safe_docx_filename(f"{quiz.title} - Answer Key", original_filename)
+            answer_key_bytes = ak_buf.getvalue()
 
         all_warnings = list(quiz.warnings)
         for q in quiz.questions:
@@ -88,6 +96,8 @@ def convert_zip(original_filename: str, data: bytes) -> ConversionResult:
             success=True,
             docx_filename=docx_filename,
             docx_bytes=buf.getvalue(),
+            answer_key_filename=answer_key_filename,
+            answer_key_bytes=answer_key_bytes,
             warnings=all_warnings,
         )
     except ConversionError as exc:

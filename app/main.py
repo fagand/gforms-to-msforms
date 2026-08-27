@@ -135,6 +135,19 @@ async def stream_job(job_id: str):
 
                 out_path = job.dir / "outputs" / final_name
                 out_path.write_bytes(result.docx_bytes or b"")
+
+                answer_key_name = None
+                if result.answer_key_bytes:
+                    ak_name = result.answer_key_filename or "answer_key.docx"
+                    ak_stem, ak_dot, ak_ext = ak_name.rpartition(".")
+                    ak_counter = 1
+                    answer_key_name = ak_name
+                    while answer_key_name in used_names:
+                        ak_counter += 1
+                        answer_key_name = f"{ak_stem} ({ak_counter}).{ak_ext}" if ak_dot else f"{ak_name} ({ak_counter})"
+                    used_names.add(answer_key_name)
+                    (job.dir / "outputs" / answer_key_name).write_bytes(result.answer_key_bytes)
+
                 success_count += 1
                 yield _sse(
                     "result",
@@ -142,6 +155,7 @@ async def stream_job(job_id: str):
                         "filename": uploaded.original_name,
                         "success": True,
                         "docx_name": final_name,
+                        "answer_key_name": answer_key_name,
                         "warnings": result.warnings or [],
                     },
                 )

@@ -208,7 +208,8 @@
       const row = findPendingRow(data.filename);
       if (!row) return;
       if (data.success) {
-        setRowState(row, "success", { meta: data.docx_name, warnings: data.warnings });
+        const meta = data.answer_key_name ? `${data.docx_name} (+ ${data.answer_key_name})` : data.docx_name;
+        setRowState(row, "success", { meta, warnings: data.warnings });
       } else {
         setRowState(row, "error", { meta: data.error });
       }
