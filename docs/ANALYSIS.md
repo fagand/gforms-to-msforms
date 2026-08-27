@@ -144,11 +144,33 @@ This is the single most important discovery for this project:
 - If `.freebirdFormviewerViewItemsItemGradingCorrectAnswerBox` is absent for a question,
   the question is treated as **ungraded** (no correct answer to carry through) rather
   than as an error.
-- Checkbox (multi-select) questions were not present in this sample, but the shared CSS
-  confirms Google uses the same pattern (`freebirdFormviewerViewItemsCheckboxCorrect`,
+- Checkbox (multi-select) questions were not present in either sample form, but the
+  shared CSS confirms Google uses the same pattern (`freebirdFormviewerViewItemsCheckboxCorrect`,
   `...CheckboxCorrectAnswerBox`) — the parser handles this generically (see
   `docs/MS_FORMS_QUICK_IMPORT.md` / engine design) rather than hard-coding only the
   radio case, but this path has not been verified against a real multi-select export.
+- **Short-answer (text) questions confirmed** against a second real form
+  ("Binary Quick Questions", 16 short-answer questions). Structure:
+  ```html
+  <div class="freebirdFormviewerViewItemsItemGradingCorrectAnswerBox">
+    <div class="...CorrectAnswerBoxHeading">Correct answers</div>
+    <div class="...CorrectAnswerBoxContent">
+      <div class="freebirdFormviewerViewItemsTextCorrectAnswerBox">
+        <div class="freebirdFormviewerViewItemsTextCorrectAnswer">0011 0111</div>
+        <div class="freebirdFormviewerViewItemsTextCorrectAnswer">00110111</div>
+      </div>
+    </div>
+  </div>
+  ```
+  **A question can accept more than one exact answer** (here, a binary value is
+  accepted both space-grouped and not) — each is its own
+  `.freebirdFormviewerViewItemsTextCorrectAnswer` div. An earlier version of this
+  engine guessed a different, non-existent class name for this
+  (`...TextCorrectAnswerValue`) which silently fell back to treating the whole
+  correct-answer box as one blob of text, mashing multiple accepted answers together
+  into a single garbled string — fixed once a real example surfaced it. See
+  `tests/fixtures/short_answer_quiz.zip` and
+  `tests/test_parser_other_types.py::test_short_answer_multiple_accepted_answers_real_fixture`.
 
 ## 7. Images
 
