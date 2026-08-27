@@ -127,7 +127,10 @@ def _extract_correct_choice_answers(correct_box: Tag) -> list[str]:
 
 
 def _extract_correct_text_answers(correct_box: Tag) -> list[str]:
-    value_tags = correct_box.select(".freebirdFormviewerViewItemsTextCorrectAnswerValue")
+    # Confirmed structure (see docs/ANALYSIS.md): one accepted answer per
+    # .freebirdFormviewerViewItemsTextCorrectAnswer div, e.g. a short-answer question
+    # can accept both "0011 0111" and "00110111" as separate divs here.
+    value_tags = correct_box.select(".freebirdFormviewerViewItemsTextCorrectAnswer")
     if value_tags:
         return [t for t in (_clean_text(v) for v in value_tags) if t]
     heading = correct_box.select_one(".freebirdFormviewerViewItemsItemGradingCorrectAnswerBoxHeading")

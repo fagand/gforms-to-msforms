@@ -1,13 +1,20 @@
-"""The one supplied sample ZIP only contained single-choice (radio) questions.
-Checkbox (multi-select) and text questions are handled generically by the parser
-(same role-based / correct-answer-box extraction, see app/converter/parser.py), but
-that code path was never exercised against a real export. These tests build minimal
-synthetic fragments that mirror the *documented* Google Forms DOM conventions (see
-docs/ANALYSIS.md §10) to check the generic extraction logic actually works, and to
-flag clearly if it doesn't — rather than shipping an untested assumption silently.
+"""The first sample ZIP only contained single-choice (radio) questions. Short-answer
+(text) questions with multiple accepted answers were later confirmed against a real
+export ("Binary Quick Questions" — see tests/fixtures/short_answer_quiz.zip and
+test_short_answer_multiple_accepted_answers below), which caught a real bug: the
+class name for each accepted answer was guessed wrong
+(...TextCorrectAnswerValue instead of the real ...TextCorrectAnswer), silently
+falling back to mashing every accepted answer into one string. The fixtures here now
+mirror the *confirmed* structure. Checkbox (multi-select) is still unverified against
+a real export — see docs/ANALYSIS.md §10.
 """
+import zipfile
+from pathlib import Path
+
 from app.converter.models import QuestionType
-from app.converter.parser import parse_quiz
+from app.converter.parser import find_form_html, parse_quiz
+
+SHORT_ANSWER_FIXTURE = Path(__file__).parent / "fixtures" / "short_answer_quiz.zip"
 
 CHECKBOX_HTML = """
 <div class="freebirdFormviewerViewFormContent">
@@ -61,8 +68,10 @@ SHORT_TEXT_HTML = """
   </div>
   <div class="freebirdFormviewerViewItemsItemGradingCorrectAnswerBox">
     <div class="freebirdFormviewerViewItemsItemGradingCorrectAnswerBoxHeading">Correct answers</div>
-    <div class="freebirdFormviewerViewItemsTextCorrectAnswer">
-      <span class="freebirdFormviewerViewItemsTextCorrectAnswerValue">Paris</span>
+    <div class="freebirdFormviewerViewItemsItemGradingCorrectAnswerBoxContent">
+      <div class="freebirdFormviewerViewItemsTextCorrectAnswerBox">
+        <div class="freebirdFormviewerViewItemsTextCorrectAnswer">Paris</div>
+      </div>
     </div>
   </div>
 </div>
@@ -91,3 +100,22 @@ def test_short_text_best_effort():
     assert q.correct_answers == ["Paris"]
     assert q.points == 1
     assert q.required is False
+
+
+def test_short_answer_multiple_accepted_answers_real_fixture():
+    """Regression test for a real bug: a short-answer question accepting more than
+    one exact answer (e.g. "0011 0111" and "00110111" for the same binary value)
+    must come back as separate list items, not one mashed-together string."""
+    with zipfile.ZipFile(SHORT_ANSWER_FIXTURE) as zf:
+        files = [(n, zf.read(n)) for n in zf.namelist()]
+    name, html = find_form_html(files)
+    quiz = parse_quiz(html, name)
+
+    assert len(quiz.questions) == 16
+    assert all(q.question_type == QuestionType.SHORT_TEXT for q in quiz.questions)
+
+    q1 = quiz.questions[0]
+    assert q1.text == "55"
+    assert q1.options == []
+    assert q1.correct_answers == ["0011 0111", "00110111"]
+    assert q1.points == 1
