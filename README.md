@@ -7,7 +7,33 @@ shaped specifically for **Microsoft Forms Quick Import**, then bundles all the
 results into a single downloadable ZIP.
 
 Built with **FastAPI** (Python) on the backend and plain **HTML/CSS/JavaScript** on
-the frontend — no build step, no frontend framework, easy to read and host.
+the frontend. Vite bundles the frontend and its shared Supabase authentication
+client; there is no frontend framework.
+
+## Shared work portal authentication
+
+The converter is protected as tool ID `forms` at `/work/forms/`. It uses the same
+Supabase project and browser session as `/work/`, including the shared
+`work-portal-auth` local-storage key. Signed-out visitors return to the portal with
+`next=/work/forms/`; signed-in users without permission return with `denied=1`.
+
+Only the neutral **Checking access…** state is rendered until the session and
+`user_tool_access` permission check succeeds. The converter DOM and JavaScript are
+initialised afterward, so selected files and converter state are not read or
+processed before approval. The initial check requires network access.
+
+Create `.env.local` for development or `.env.production.local` for a production
+build using only these browser-safe values from the workRoot Supabase project:
+
+```dotenv
+VITE_SUPABASE_URL=https://PROJECT_REF.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+Never put a service-role key, database password, OAuth secret, or other privileged
+credential in these variables. Supabase is used only for session and tool
+authorisation: uploaded ZIPs, converted content, and other application data are
+never sent to Supabase.
 
 ## Why this exists / how it works
 
@@ -103,16 +129,19 @@ cd gforms-to-msforms
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+npm install
+npm run build
 uvicorn app.main:app --reload --port 8811
 ```
 
-Then open http://127.0.0.1:8811 in a browser.
+Then open the app at its `/work/forms/` mount. For frontend development, `npm run
+dev` runs Vite separately.
 
 To run the test suite:
 
 ```bash
 pip install -r requirements-dev.txt
-pytest
+npm run verify
 ```
 
 ## Deploying on a standard Linux server (production)
@@ -164,12 +193,18 @@ adjust package manager commands for other distros.
 5. Visit `https://forms.example.school.uk` and confirm the upload/convert/download
    flow works end to end with a real migrated ZIP.
 
+Before starting production, create `.env.production.local` with the two
+browser-safe Supabase values and run `npm ci && npm run build`. FastAPI serves the
+generated `app/static/` files.
+
 ### Updating
 
 ```bash
 cd /opt/gforms2msforms
 sudo -u gforms2msforms git pull
 sudo -u gforms2msforms .venv/bin/pip install -r requirements.txt
+sudo -u gforms2msforms npm ci
+sudo -u gforms2msforms npm run build
 sudo systemctl restart gforms2msforms
 ```
 
@@ -238,7 +273,11 @@ folder, **Change Permissions → Recurse into subdirectories → 755**.
 
 3. **Edit `.cpanel.yml`** in the repo (already included) so `REPOPATH`, `APPPATH`,
    and `VENV_PIP` match your actual cPanel username, the app folder name you chose,
-   and the exact Python version segment from step 2. Commit and push that change.
+   and the exact Python version segment from step 2. Create
+   `~/gforms-to-msforms-app/.env.production.local` with the two browser-safe
+   Supabase values. Deployment preserves that untracked file and runs the Vite
+   build when npm is available at `/usr/local/bin/npm`. Commit and push the config
+   change.
 
 4. **cPanel → Git™ Version Control → (this repo) → Manage → Pull or Deploy**: click
    **Update from Remote**, then **Deploy HEAD Commit**. This runs `.cpanel.yml`,

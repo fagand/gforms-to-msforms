@@ -256,3 +256,10 @@ body {
   .actions { flex-direction: column; }
   .btn { width: 100%; }
 }
+/* The only rendered UI until shared portal authorisation succeeds. */
+.access-status {
+  margin: 0;
+  padding: 1.5rem;
+  color: #64748b;
+  font: 14px/1.5 system-ui, sans-serif;
+}

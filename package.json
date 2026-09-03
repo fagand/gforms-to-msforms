@@ -1,0 +1,20 @@
+{
+  "name": "gforms-to-msforms",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/check-build.mjs",
+    "test": "vitest run",
+    "verify": "npm test && npm run build && .venv/bin/pytest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.115.0"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.11"
+  }
+}

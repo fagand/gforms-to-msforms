@@ -1,4 +1,4 @@
-(() => {
+export function startConverter() {
   "use strict";
 
   const MAX_FILES = 20;
@@ -252,4 +252,4 @@
     uploadSection.hidden = false;
     resultsSection.hidden = true;
   });
-})();
+}
