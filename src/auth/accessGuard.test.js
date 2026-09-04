@@ -7,15 +7,10 @@ import {
   requireFormsAccess,
 } from './accessGuard.js';
 
-function clientWith(session, toolIds = []) {
+function clientWith(session, rpcResult = { data: false, error: null }) {
   return {
     auth: { getSession: vi.fn().mockResolvedValue({ data: { session }, error: null }) },
-    from: vi.fn(() => ({
-      select: vi.fn().mockResolvedValue({
-        data: toolIds.map((tool_id) => ({ tool_id })),
-        error: null,
-      }),
-    })),
+    rpc: vi.fn().mockResolvedValue(rpcResult),
   };
 }
 
@@ -27,22 +22,31 @@ describe('Forms Converter access guard', () => {
       reason: 'signed-out',
       redirectTo: '/work/?next=/work/forms/',
     });
-    expect(client.from).not.toHaveBeenCalled();
+    expect(client.rpc).not.toHaveBeenCalled();
     expect(SIGNED_OUT_REDIRECT).toBe('/work/?next=/work/forms/');
     expect(FORMS_PATH).toBe('/work/forms/');
   });
 
   it('denies an authenticated user without forms permission', async () => {
-    await expect(requireFormsAccess(clientWith({ user: {} }, ['reports']))).resolves.toEqual({
+    const client = clientWith({ user: {} }, { data: false, error: null });
+    await expect(requireFormsAccess(client)).resolves.toEqual({
       allowed: false,
       reason: 'forbidden',
       redirectTo: ACCESS_DENIED_REDIRECT,
     });
+    expect(client.rpc).toHaveBeenCalledWith('has_tool_access', { p_tool_id: 'forms' });
   });
 
   it('allows an authenticated user with forms permission', async () => {
-    const client = clientWith({ user: {} }, ['reports', FORMS_TOOL_ID]);
+    const client = clientWith({ user: {} }, { data: true, error: null });
     await expect(requireFormsAccess(client)).resolves.toEqual({ allowed: true });
-    expect(client.from).toHaveBeenCalledWith('user_tool_access');
+    expect(client.rpc).toHaveBeenCalledWith('has_tool_access', { p_tool_id: FORMS_TOOL_ID });
+  });
+
+  it('fails closed when the access RPC returns an error', async () => {
+    const error = new Error('RPC unavailable');
+    const client = clientWith({ user: {} }, { data: null, error });
+    await expect(requireFormsAccess(client)).rejects.toBe(error);
+    expect(client.rpc).toHaveBeenCalledWith('has_tool_access', { p_tool_id: 'forms' });
   });
 });

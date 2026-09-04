@@ -18,7 +18,7 @@ Supabase project and browser session as `/work/`, including the shared
 `next=/work/forms/`; signed-in users without permission return with `denied=1`.
 
 Only the neutral **Checking access…** state is rendered until the session and
-`user_tool_access` permission check succeeds. The converter DOM and JavaScript are
+`has_tool_access` permission check succeeds. The converter DOM and JavaScript are
 initialised afterward, so selected files and converter state are not read or
 processed before approval. The initial check requires network access.
 

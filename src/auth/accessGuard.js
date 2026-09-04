@@ -13,11 +13,12 @@ export async function requireFormsAccess(client = getSupabaseClient()) {
     return { allowed: false, reason: 'signed-out', redirectTo: SIGNED_OUT_REDIRECT };
   }
 
-  const { data, error } = await client.from('user_tool_access').select('tool_id');
+  const { data, error } = await client.rpc('has_tool_access', {
+    p_tool_id: FORMS_TOOL_ID,
+  });
   if (error) throw error;
 
-  const allowed = (data ?? []).some(({ tool_id }) => String(tool_id) === FORMS_TOOL_ID);
-  return allowed
+  return data === true
     ? { allowed: true }
     : { allowed: false, reason: 'forbidden', redirectTo: ACCESS_DENIED_REDIRECT };
 }
