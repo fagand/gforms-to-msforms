@@ -35,8 +35,6 @@ deployment:
     - export VENV_PIP=/home/fagancom/virtualenv/gforms-to-msforms-app/3.13/bin/pip
     - /bin/mkdir -p $APPPATH
     - /usr/bin/rsync -a --delete --exclude='.git' --exclude='.cpanel.yml' --exclude='Passengerfile.json' --exclude='.env.production.local' $REPOPATH/ $APPPATH/
-    - if [ ! -x "/usr/local/bin/npm" ]; then echo "npm is required to build the authenticated frontend" >&2; exit 1; fi
-    - cd $APPPATH && /usr/local/bin/npm ci --quiet && /usr/local/bin/npm run build
     - /bin/mkdir -p $APPPATH/tmp
     - /usr/bin/find $APPPATH -type d -exec /bin/chmod 755 {} \;
     - /usr/bin/find $APPPATH -type f -exec /bin/chmod 644 {} \;

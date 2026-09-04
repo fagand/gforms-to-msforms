@@ -194,8 +194,8 @@ adjust package manager commands for other distros.
    flow works end to end with a real migrated ZIP.
 
 Before starting production, create `.env.production.local` with the two
-browser-safe Supabase values and run `npm ci && npm run build`. FastAPI serves the
-generated `app/static/` files.
+browser-safe Supabase values and run `npm ci && npm run build`. Commit the generated
+`app/static/` files; FastAPI serves that committed production build.
 
 ### Updating
 
@@ -274,10 +274,11 @@ folder, **Change Permissions → Recurse into subdirectories → 755**.
 3. **Edit `.cpanel.yml`** in the repo (already included) so `REPOPATH`, `APPPATH`,
    and `VENV_PIP` match your actual cPanel username, the app folder name you chose,
    and the exact Python version segment from step 2. Create
-   `~/gforms-to-msforms-app/.env.production.local` with the two browser-safe
-   Supabase values. Deployment preserves that untracked file and runs the Vite
-   build when npm is available at `/usr/local/bin/npm`. Commit and push the config
-   change.
+   `.env.production.local` locally with the two browser-safe Supabase values, run
+   the Vite build, and commit the generated `app/static/` directory with the source
+   changes. The cPanel host does not need Node or npm. Deployment preserves any
+   existing `~/gforms-to-msforms-app/.env.production.local` for compatibility, but
+   does not read it or rebuild the frontend. Commit and push the config and build.
 
 4. **cPanel → Git™ Version Control → (this repo) → Manage → Pull or Deploy**: click
    **Update from Remote**, then **Deploy HEAD Commit**. This runs `.cpanel.yml`,
