@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ACCESS_DENIED_REDIRECT,
   FORMS_PATH,
@@ -6,6 +6,7 @@ import {
   SIGNED_OUT_REDIRECT,
   requireFormsAccess,
 } from './accessGuard.js';
+import { TRIAL_STORAGE_KEY } from '../trial/trialAccess.js';
 
 function clientWith(session, rpcResult = { data: false, error: null }) {
   return {
@@ -15,6 +16,22 @@ function clientWith(session, rpcResult = { data: false, error: null }) {
 }
 
 describe('Forms Converter access guard', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    history.replaceState({}, '', '/work/forms/');
+  });
+
+  it('allows a current forms trial without contacting the account service', async () => {
+    const now = Date.now();
+    sessionStorage.setItem(TRIAL_STORAGE_KEY, JSON.stringify({
+      toolId: 'forms', startedAt: now, expiresAt: now + 30_000,
+    }));
+    const client = clientWith(null);
+    await expect(requireFormsAccess(client)).resolves.toEqual({ allowed: true, trial: true });
+    expect(client.auth.getSession).not.toHaveBeenCalled();
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
   it('redirects a signed-out user to the exact protected return path', async () => {
     const client = clientWith(null);
     await expect(requireFormsAccess(client)).resolves.toEqual({
